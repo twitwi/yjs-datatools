@@ -35,6 +35,7 @@ export function parseHash(h: string): { server: string; repo: string; token: str
         .map((t) => t.trim())
         .filter((t) => t)
     : []
+  // repo is actually a yjs docname, but "repo" distinguishes it better from "path"
   return { server, repo, token, path, tags }
 }
 

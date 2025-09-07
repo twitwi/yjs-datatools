@@ -2,6 +2,7 @@ import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { SEP, EG_CONFIG_NOBOX } from './ybox'
+import { parseHash } from './hash'
 
 export const DEFAULT_LOCAL_STORAGE_KEY_FOR_WARNING = 'yjsapp:server' // used to detect if user forgot to change it
 
@@ -65,21 +66,48 @@ export function getOrAskConfig(LOCAL_STORAGE_KEY = DEFAULT_LOCAL_STORAGE_KEY_FOR
   }
   return config as [string, string, string]
 }
+// TODO allow a "I pass the server/docname/token" object instead of using lskey and asking
 
-export async function setupYjs({ websocket = true, indexeddb = true, lsKey = DEFAULT_LOCAL_STORAGE_KEY_FOR_WARNING } = {}) {
+export type SetupYjsOptions = {
+  websocket?: boolean
+  indexeddb?: boolean
+  idbKey?: string // default undefined for auto
+}
+export const DEFAULT_SETUP_YJS_OPTIONS: SetupYjsOptions = {
+  websocket: true,
+  indexeddb: true,
+  idbKey: undefined, // auto based on server/docname
+}
+
+export async function setupYjs(server: string, docname: string, token: string, options: SetupYjsOptions = {}) {
+  const { websocket, indexeddb, idbKey: _idbKey } = Object.assign({}, DEFAULT_SETUP_YJS_OPTIONS, options)
+  let idbKey = _idbKey
   const ydoc = new Y.Doc()
-  const [server, docname, token] = getOrAskConfig(lsKey)
-  const idbkey = `yjs-${docname}` // idb key, can be different
-  let ws = undefined
+  let ws = undefined as undefined | WebsocketProvider
   if (websocket) {
     ws = new WebsocketProvider(server.includes('://') ? server : `wss://${server}`, `${docname}?t=${token}`, ydoc)
   }
   let idb = undefined as undefined | IndexeddbPersistence
   if (indexeddb) {
-    idb = new IndexeddbPersistence(idbkey, ydoc)
+    if (!idbKey) {
+      idbKey = `yjs::${server}::${docname}`
+    }
+    idb = new IndexeddbPersistence(idbKey, ydoc)
     await new Promise((resolve) => {
       idb!.on('synced', resolve)
     })
+  } else {
+    idbKey = undefined // to indicate no idb, even if passed a key
   }
-  return { ydoc, server, docname, token, idbkey, ws, idb }
+  return { ydoc, server, docname, token, idbKey, ws, idb }
+}
+
+export async function setupYjsByConfig(config: string, options: SetupYjsOptions = {}) {
+  const { server, repo, token } = parseHash(config)
+  return setupYjs(server, repo, token, options)
+}
+
+export async function setupYjsAsk(lsKey?: string, saveToLocalStorage: boolean = true, options: SetupYjsOptions = {}) {
+  const [server, docname, token] = getOrAskConfig(lsKey, saveToLocalStorage)
+  return setupYjs(server, docname, token, options)
 }
