@@ -2,9 +2,9 @@
 import { Doc as YDoc, Map as YMap, Array as YArray, Text as YText } from 'yjs'
 export { YDoc, YMap, YArray, YText }
 
-import { customRef, type Ref } from 'vue'
-import { useDebounceFn } from '@vueuse/core'
-
+import { customRef, ref, type Ref } from 'vue'
+import { useDebounceFn, watchDeep } from '@vueuse/core'
+import * as JsYaml from 'js-yaml'
 
 export type YAny = YMap<YAny> | YArray<YAny> | YText | number
 export type SAny = number | string | SAny[] | { [key: string]: SAny }
@@ -254,4 +254,50 @@ export function yjsRef<T>(ydoc: YDoc, path: string) {
       },
     }
   }) as Ref<T>
+}
+
+export function wrapYamlYText<T>(ytext: YText) {
+  const status = ref('init' as 'init' | 'ok' | 'error' | 'parsing' | 'saving' | 'saved')
+  const data = ref(null as T | null)
+  function parse() {
+    status.value = 'parsing'
+    try {
+      const raw = ytext.toJSON()
+      if (!raw) throw new Error('Empty raw')
+      const parsed = JsYaml.load(ytext.toJSON()) as T
+      if (!parsed) throw new Error('Empty parsed')
+      data.value = parsed
+      status.value = 'ok'
+    } catch (e) {
+      status.value = 'error'
+      throw e
+    }
+  }
+  function save() {
+    status.value = 'saving'
+    const serialized = JsYaml.dump(data.value)
+    ytext.doc!.transact(() => {
+      status.value = 'saving'
+      ytext.delete(0, ytext.length)
+      ytext.insert(0, serialized)
+      //ytext.delete(serialized.length, ytext.length)
+      status.value = 'saved'
+    })
+  }
+  ytext.observe(() => {
+    parse()
+  })
+  watchDeep(data, () => {
+    if (JSON.stringify(JsYaml.load(ytext.toJSON())) === JSON.stringify(data.value)) {
+      return
+    }
+    save()
+  })
+  parse()
+  return {
+    data,
+    ytext,
+    status,
+    save,
+  }
 }
