@@ -75,6 +75,3 @@ export function getYTextInBox(box: Y.Map<unknown>, path: string, create: boolean
   }
   return p.get('content') as Y.Text
 }
-
-
-

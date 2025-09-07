@@ -84,7 +84,6 @@ export async function syncedAndConnected(ret: ReturnType<typeof setupYjs>) {
 }
 
 export function setupYjs(parsed: ParsedConfig, options: SetupYjsOptions = {}) {
-  console.log(parsed)
   const { server, docname, token } = parsed
   const { websocket, indexeddb, idbKey: _idbKey } = Object.assign({}, DEFAULT_SETUP_YJS_OPTIONS, options)
   let idbKey = _idbKey
