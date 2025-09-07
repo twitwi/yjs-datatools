@@ -5,8 +5,8 @@ export const EG_CONFIG_NOBOX = `todo.com${SEP}doc${SEP}token${SEP}sub/folder`
 export const EG_CONFIG_BOX = `todo.com${SEP}doc${SEP}token${SEP}sub/folder/@/path`
 export const ROOT_ID = 'root:' // for boxes
 
-export function getYMap(doc: Y.Doc, path: string, create: boolean = false): any {
-}
+//export function getYMap(doc: Y.Doc, path: string, create: boolean = false): any {
+//}
 
 export function getYText(doc: Y.Doc, path: string, create: boolean = false): Y.Text {
   const steps = path.split('/').filter((s) => s)
