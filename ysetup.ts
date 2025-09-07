@@ -1,18 +1,18 @@
 import * as Y from 'yjs'
 import { WebsocketProvider } from 'y-websocket'
 import { IndexeddbPersistence } from 'y-indexeddb'
-import { SEP, EG_CONFIG_NOBOX } from './ybox'
+import { EG_CONFIG_NOBOX } from './ybox'
 import { parseHash } from './hash'
+export type ParsedConfig = ReturnType<typeof parseHash>
+
 
 export const DEFAULT_LOCAL_STORAGE_KEY_FOR_WARNING = 'yjsapp:server' // used to detect if user forgot to change it
 
 export function getOrAskConfig(LOCAL_STORAGE_KEY = DEFAULT_LOCAL_STORAGE_KEY_FOR_WARNING, saveToLocalStorage = true) {
-  const ASK = Symbol('ask')
 
-  let config: symbol | (string | symbol)[] = ASK
-  //let default = [ASK, ASK, ASK]
-  //let default = ['TODO.com', ASK, ASK]
-  //let default = ['TODO.com', 'todo-doc', 'todo-tok-suffix'] // TODO: server, document name, token (if any)
+  const ASK = Symbol('ask')
+  let config = ASK as typeof ASK | ParsedConfig
+  let configStr = undefined as string | undefined
 
   if (LOCAL_STORAGE_KEY ?? '' !== '') {
     if (LOCAL_STORAGE_KEY == DEFAULT_LOCAL_STORAGE_KEY_FOR_WARNING) {
@@ -23,7 +23,8 @@ export function getOrAskConfig(LOCAL_STORAGE_KEY = DEFAULT_LOCAL_STORAGE_KEY_FOR
     }
     const local = localStorage.getItem(LOCAL_STORAGE_KEY)
     if (local) {
-      config = local.split(SEP)
+      config = parseHash(local)
+      configStr = local
     }
   }
 
@@ -32,39 +33,15 @@ export function getOrAskConfig(LOCAL_STORAGE_KEY = DEFAULT_LOCAL_STORAGE_KEY_FOR
     if (!v) {
       throw new Error('No config provided')
     }
-    config = v.split(SEP)
-    if (config.length < 3) {
-      throw new Error('Invalid config provided')
-    }
+    config = parseHash(v)
+    configStr = v
   }
-  if (!Array.isArray(config)) {
-    throw new Error('Invalid config provided')
+
+  if (saveToLocalStorage && configStr) {
+    localStorage.setItem(LOCAL_STORAGE_KEY, configStr)
   }
-  if (config[0] == ASK) {
-    const server = prompt('[${LOCAL_STORAGE_KEY}]\n\nEnter the server name, e.g.: todo.com')
-    if (!server) {
-      throw new Error('No server provided')
-    }
-    config[0] = server
-  }
-  if (config[1] == ASK) {
-    const docname = prompt('[${LOCAL_STORAGE_KEY}]\n\nEnter the document name, e.g.: todo-doc')
-    if (!docname) {
-      throw new Error('No document name provided')
-    }
-    config[1] = docname
-  }
-  if (config[2] == ASK) {
-    const token = prompt('[${LOCAL_STORAGE_KEY}]\n\nEnter the token, e.g.: todo-tok-suffix')
-    if (!token) {
-      throw new Error('No token provided')
-    }
-    config[2] = token
-  }
-  if (saveToLocalStorage) {
-    localStorage.setItem(LOCAL_STORAGE_KEY, config.join(SEP))
-  }
-  return config as [string, string, string]
+
+  return config
 }
 
 export type SetupYjsOptions = {
@@ -106,7 +83,9 @@ export async function syncedAndConnected(ret: ReturnType<typeof setupYjs>) {
   return ret
 }
 
-export function setupYjs(server: string, docname: string, token: string, options: SetupYjsOptions = {}) {
+export function setupYjs(parsed: ParsedConfig, options: SetupYjsOptions = {}) {
+  console.log(parsed)
+  const { server, docname, token } = parsed
   const { websocket, indexeddb, idbKey: _idbKey } = Object.assign({}, DEFAULT_SETUP_YJS_OPTIONS, options)
   let idbKey = _idbKey
   const ydoc = new Y.Doc()
@@ -123,15 +102,19 @@ export function setupYjs(server: string, docname: string, token: string, options
   } else {
     idbKey = undefined // to indicate no idb, even if passed a key
   }
-  return { ydoc, server, docname, token, idbKey, ws, idb }
+  return { ydoc, server, docname, token, parsed, idbKey, ws, idb }
 }
 
 export function setupYjsByConfig(config: string, options: SetupYjsOptions = {}) {
-  const { server, repo, token } = parseHash(config)
-  return setupYjs(server, repo, token, options)
+  const parsed = parseHash(config)
+  return setupYjs(parsed, options)
 }
 
 export function setupYjsAsk(lsKey?: string, saveToLocalStorage: boolean = true, options: SetupYjsOptions = {}) {
-  const [server, docname, token] = getOrAskConfig(lsKey, saveToLocalStorage)
-  return setupYjs(server, docname, token, options)
+  const parsed = getOrAskConfig(lsKey, saveToLocalStorage)
+  console.log('setupYjsAsk', { lsKey, saveToLocalStorage, options }, parsed)
+  if (!parsed) {
+    throw new Error('No config')
+  }
+  return setupYjs(parsed, options)
 }

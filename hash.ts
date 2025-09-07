@@ -23,11 +23,11 @@ export function expandHash(): string {
   return EG[h] ?? h
 }
 
-export function parseHash(h: string): { server: string; repo: string; token: string; path: string; tags: string[] } {
+export function parseHash(h: string): { server: string; docname: string; token: string; path: string; tags: string[] } {
   const parts = h.split(SEP)
   if (parts.length < 2) throw new Error('Invalid hash format')
-  const [server, repo, token, pathRaw = '', tagsStr = ''] = parts
-  if (!server || !repo) throw new Error('Invalid hash format')
+  const [server, docname, token, pathRaw = '', tagsStr = ''] = parts
+  if (!server || !docname) throw new Error('Invalid hash format')
   const path = pathRaw.replace(/^\//, '')
   const tags = tagsStr
     ? tagsStr
@@ -35,7 +35,5 @@ export function parseHash(h: string): { server: string; repo: string; token: str
         .map((t) => t.trim())
         .filter((t) => t)
     : []
-  // repo is actually a yjs docname, but "repo" distinguishes it better from "path"
-  return { server, repo, token, path, tags }
+  return { server, docname, token, path, tags }
 }
-
