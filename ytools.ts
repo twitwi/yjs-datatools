@@ -1,7 +1,7 @@
 import { Doc as YDoc, Map as YMap, Array as YArray, Text as YText } from 'yjs'
 export { YDoc, YMap, YArray, YText }
 
-export type YAny = YMap<YAny> | YArray<YAny> | YText | number
+export type YAny = YMap<YAny> | YArray<YAny> | YText | string | number
 export type SAny = number | string | SAny[] | { [key: string]: SAny }
 
 export function className(o: YAny | SAny | undefined): string {

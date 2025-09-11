@@ -1,9 +1,10 @@
 
-import { YDoc, YMap, YArray, YText } from './ytools'
+import { YDoc, YMap, YArray, YText, type YAny, type SAny, className } from './ytools'
 import { isY, isYMap, isYArray, isYText } from './ytools'
 
 import { customRef, ref, type Ref } from 'vue'
 import { useDebounceFn, watchDeep } from '@vueuse/core'
+// @ts-expect-error bad lib typing
 import * as JsYaml from 'js-yaml'
 
 const unimplemented = new Set<string|symbol>('concat reverse'.split(' '))
@@ -131,7 +132,7 @@ export function fromY(o: YAny | undefined): SAny | undefined {
   if (o === undefined || typeof o === 'number' || o === null) {
     return o
   }
-  return o.toJSON()
+  return typeof o === 'string' ? o : o.toJSON()
 }
 export function toY(o: SAny): YAny {
   if (o === undefined || typeof o === 'number' || o === null) {

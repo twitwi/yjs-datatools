@@ -16,10 +16,13 @@ const EG: Record<string, string> = {
 // - allow simple "variables", i.e. subpart replacement, e.g.
 //   "localhost": "(dev)::TEST/overtypst::TEST_overtypst"
 //   "(dev)": "ws://localhost:1234"
-export function expandHash(): string {
-  const loc = window.document.location
-  const defaultConfig = loc.hostname === 'localhost' ? EG.localhost : EG.otherwise
-  const h = loc.hash.replace(/^#\/?/, '') || defaultConfig
+export function expandHash(hash: string): string {
+  let defaultConfig = EG.default
+  const gt = globalThis as unknown as Record<'window', any> // ok outside browser
+  if (gt.window !== undefined) {
+    defaultConfig = gt.window.location.hostname === 'localhost' ? EG.localhost : EG.otherwise
+  }
+  const h = hash.replace(/^#\/?/, '') || defaultConfig
   return EG[h] ?? h
 }
 
