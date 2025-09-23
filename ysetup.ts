@@ -3,6 +3,7 @@ import { WebsocketProvider } from 'y-websocket'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { EG_CONFIG_NOBOX } from './ybox'
 import { parseHash } from './hash'
+import { ref } from 'vue'
 export type ParsedConfig = ReturnType<typeof parseHash>
 
 
@@ -48,13 +49,11 @@ export type SetupYjsOptions = {
   websocket?: boolean
   indexeddb?: boolean
   idbKey?: string // default undefined for auto
-  idbAwaitSync?: boolean
 }
 export const DEFAULT_SETUP_YJS_OPTIONS: SetupYjsOptions = {
   websocket: true,
   indexeddb: true,
   idbKey: undefined, // auto based on server/docname
-  idbAwaitSync: true,
 }
 
 export async function synced(ret: ReturnType<typeof setupYjs>) {
@@ -67,11 +66,14 @@ export async function synced(ret: ReturnType<typeof setupYjs>) {
 export async function connected(ret: ReturnType<typeof setupYjs>) {
   if (ret.ws) {
     await new Promise<void>((resolve) => {
-      if (ret.ws!.wsconnected) {
-        resolve()
-      } else {
-        ret.ws!.once('sync', () => resolve())
-      }
+      //if (ret.ws!.wsconnected) {
+      //  resolve()
+      //} else {
+        ret.ws!.once('sync', () => {
+          console.log('WS SYNC')
+          resolve()
+        })
+      //}
     })
   }
   return ret
@@ -84,13 +86,22 @@ export async function syncedAndConnected(ret: ReturnType<typeof setupYjs>) {
 }
 
 export function setupYjs(parsed: ParsedConfig, options: SetupYjsOptions = {}) {
+  console.log("PARSED", parsed)
   const { server, docname, token } = parsed
   const { websocket, indexeddb, idbKey: _idbKey } = Object.assign({}, DEFAULT_SETUP_YJS_OPTIONS, options)
   let idbKey = _idbKey
   const ydoc = new Y.Doc()
+  const wsConnected = ref(false)
+  const wsStatus = ref('init')
   let ws = undefined as undefined | WebsocketProvider
   if (websocket) {
     ws = new WebsocketProvider(server.includes('://') ? server : `wss://${server}`, `${docname}?t=${token}`, ydoc)
+    ws.on('status', (st) => setTimeout(() => {
+      console.log('WS STATUS', st.status)
+      wsStatus.value = st.status
+      wsConnected.value = st.status === 'connected'
+    }, 1))
+
   }
   let idb = undefined as undefined | IndexeddbPersistence
   if (indexeddb) {
@@ -101,7 +112,7 @@ export function setupYjs(parsed: ParsedConfig, options: SetupYjsOptions = {}) {
   } else {
     idbKey = undefined // to indicate no idb, even if passed a key
   }
-  return { ydoc, server, docname, token, parsed, idbKey, ws, idb }
+  return { ydoc, server, docname, token, parsed, idbKey, ws, wsStatus, wsConnected, idb }
 }
 
 export function setupYjsByConfig(config: string, options: SetupYjsOptions = {}) {

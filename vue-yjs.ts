@@ -253,6 +253,18 @@ export function wrapYamlYText<T>(ytext: YText) {
     status.value = 'saving'
     const serialized = JsYaml.dump(data.value)
     ytext.doc!.transact(() => {
+      const yt = ytext.toJSON()
+      let minL = Math.min(yt.length, serialized.length)
+      let nS = 0
+      while (nS < minL && yt[nS] === serialized[nS]) {
+        nS++
+      }
+      let nE = 0
+      while (nE + nS < minL && yt[yt.length - 1 - nE] === serialized[serialized.length - 1 - nE]) {
+        nE++
+      }
+      console.log('SAVE', -yt.length, serialized.length, 'but gaining', nS + nE, 'so', - (yt.length - nS - nE), serialized.length - nS - nE) 
+
       status.value = 'saving'
       ytext.delete(0, ytext.length)
       ytext.insert(0, serialized)
