@@ -266,9 +266,8 @@ export function wrapYamlYText<T>(ytext: YText) {
       console.log('SAVE', -yt.length, serialized.length, 'but gaining', nS + nE, 'so', - (yt.length - nS - nE), serialized.length - nS - nE) 
 
       status.value = 'saving'
-      ytext.delete(0, ytext.length)
-      ytext.insert(0, serialized)
-      //ytext.delete(serialized.length, ytext.length)
+      ytext.delete(nS, yt.length - nS - nE)
+      ytext.insert(nS, serialized.slice(nS, serialized.length - nE))
       status.value = 'saved'
     })
   }

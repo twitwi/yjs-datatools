@@ -7,11 +7,13 @@ export type SAny = number | string | SAny[] | { [key: string]: SAny }
 export function className(o: YAny | SAny | undefined): string {
   return o ? Object.getPrototypeOf(o)?.constructor?.name ?? typeof o : typeof o
 }
+/*
 export const classNames = {
   YMap: className(new YMap()),
   YArray: className(new YArray()),
   YText: className(new YText('')),
 }
+*/
 export function isY(o: YAny | SAny | undefined): o is YAny {
   return o instanceof YMap || o instanceof YArray || o instanceof YText
 }
