@@ -27,7 +27,7 @@ export function isYText(o: YAny): o is YText {
   return o instanceof YText
 }
 
-export function getY(doc: YDoc, path: string): YAny | undefined {
+export function getY(doc: YDoc, path: string): YAny | string | number| undefined {
   const steps = path.split('/').filter((s) => s)
   let p = doc.getMap(steps.shift()) as YAny
   while (steps.length > 0) {
@@ -40,6 +40,12 @@ export function getY(doc: YDoc, path: string): YAny | undefined {
         return undefined
       }
       const o = p.get(k)
+      if (typeof o === 'string' && steps.length === 0) {
+        return o
+      }
+      if (typeof o === 'number' && steps.length === 0) {
+        return o
+      }
       if (!isY(o)) {
         return undefined
       }
