@@ -29,7 +29,7 @@ export function isYText(o: YAny): o is YText {
 
 export function getY(doc: YDoc, path: string): YAny | string | number| undefined {
   const steps = path.split('/').filter((s) => s)
-  let p = doc.getMap() //doc.getMap(steps.shift()) as YAny
+  let p = doc.getMap() as YAny //doc.getMap(steps.shift()) as YAny
   while (steps.length > 0) {
     const k = steps.shift()!
     if (p === undefined) {
@@ -46,10 +46,13 @@ export function getY(doc: YDoc, path: string): YAny | string | number| undefined
       if (typeof o === 'number' && steps.length === 0) {
         return o
       }
+      if (o === undefined) {
+        return undefined
+      }
       if (!isY(o)) {
         return undefined
       }
-      p = o
+      p = o as YAny
     } else if (isYArray(p)) {
       if (isNaN(Number(k))) {
         return undefined

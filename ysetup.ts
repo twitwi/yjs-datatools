@@ -3,18 +3,18 @@ import { WebsocketProvider } from 'y-websocket'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { EG_CONFIG_NOBOX } from './ybox'
 import { parseHash } from './hash'
-import { nextTick, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { getY } from './ytools'
 export type ParsedConfig = ReturnType<typeof parseHash>
 
 
 export const DEFAULT_LOCAL_STORAGE_KEY_FOR_WARNING = 'yjsapp:server' // used to detect if user forgot to change it
 
-export async function EMPTY_ON_MOVED_HANDLER(newDocumentPath: string) {
+export async function EMPTY_ON_MOVED_HANDLER(newDocumentPath: string, comment: string) {
   return true
 }
-export async function DEFAULT_ON_MOVED_HANDLER(newDocumentPath: string) {
-  const continueEditing = confirm(`The document has moved to a new document path:\n\n${newDocumentPath}\n\nYou might be editing a deprecated document.\n\nPress OK to continue editing the new document.`)
+export async function DEFAULT_ON_MOVED_HANDLER(newDocumentPath: string, comment: string) {
+  const continueEditing = confirm(`The document has moved to a new document path:\n--- --- ---\n${newDocumentPath}\n--- --- ---\nYou might be editing a deprecated document.\n\nPress OK to continue editing the new document.`)
   return continueEditing
 }
 
@@ -76,47 +76,37 @@ export async function connected(ret: ReturnType<typeof setupYjs>, onMovedHandler
   if (ret.ws) {
     await new Promise<void>(async (resolve) => {
       watch(ret.wsStatus, async (newStatus) => {
-        console.log('-------------- WS STATUS WATCHER', newStatus)
         if (newStatus === 'connected') {
           setTimeout(async () => {
-            console.log('ws status on connect', ret.wsStatus.value, ret.ws!.wsconnected)
             const rootKeys = [...ret.ydoc.getMap().keys()]
-            console.log('root keys', [...ret.ydoc.getMap().keys()])
-            //console.log('keys', [...ret.ydoc.getMap('yjsfs').keys()])
-            //console.log('moved?', ret.ydoc.getText('meta-301-moved').toJSON())
-            const newDocumentPath = rootKeys.includes('meta-301-moved') ? getY(ret.ydoc, 'meta-301-moved') : undefined
-            console.log('newDocumentPath', newDocumentPath)
-            if (newDocumentPath && newDocumentPath !== '') {
-              const continueEditing = await onMovedHandler(newDocumentPath)
-              if (!continueEditing) {
-                ret.ws!.disconnect()
-                throw new Error('Document moved, editing aborted by user')
+            if (rootKeys.includes('meta-301-moved')) {
+              const moved = getY(ret.ydoc, 'meta-301-moved')
+              if (typeof moved !== 'string') {
+                alert('Warning: meta-301-moved is not a string!')
+              } else {
+                console.log('moved', moved)
+                if (moved && moved !== '') {
+                  const [newDocumentPath, ...rest] = moved.split(/\n/)
+                  const continueEditing = await onMovedHandler(newDocumentPath, rest.join('\n'))
+                  if (!continueEditing) {
+                    ret.ws!.disconnect()
+                    throw new Error('Document moved, editing aborted by user')
+                  }
+                }
+                resolve()
               }
             }
-            resolve()
           }, 100)
         }
       })
-      //if (ret.ws!.wsconnected) {
-        //  resolve()
-        //} else {
-          
-        ret.ws!.once('sync', (isSync) => {
-          console.log('WS SYNC', isSync)
-          //nextTick(resolve)
-          //setTimeout(resolve, 10)
-          //setTimeout(resolve, 3000)
-          //resolve()
-        })
-      //}
     })
   }
   return ret
 }
 
-export async function syncedAndConnected(ret: ReturnType<typeof setupYjs>) {
+export async function syncedAndConnected(ret: ReturnType<typeof setupYjs>, onMovedHandler = DEFAULT_ON_MOVED_HANDLER) {
   await synced(ret)
-  await connected(ret)
+  await connected(ret, onMovedHandler)
   return ret
 }
 
