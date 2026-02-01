@@ -14,7 +14,7 @@ export async function EMPTY_ON_MOVED_HANDLER(newDocumentPath: string, comment: s
   return true
 }
 export async function DEFAULT_ON_MOVED_HANDLER(newDocumentPath: string, comment: string) {
-  const continueEditing = confirm(`The document has moved to a new document path:\n--- --- ---\n${newDocumentPath}\n--- --- ---\nYou might be editing a deprecated document.\n\nPress OK to continue editing the new document.`)
+  const continueEditing = confirm(`The document has moved to a new document path:\n--- --- ---\n${newDocumentPath}\n--- --- ---\nYou might be editing a deprecated document.\n\nPress OK to continue editing the old document.`)
   return continueEditing
 }
 
