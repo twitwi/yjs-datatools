@@ -1,6 +1,7 @@
 
-import { YDoc, YMap, YArray, YText, type YAny, type SAny, className } from './ytools'
+import { YDoc as YDoc_, YMap, YArray, YText, type YAny, type SAny, className } from './ytools'
 import { isY, isYMap, isYArray, isYText } from './ytools'
+export type YDoc = YDoc_
 
 import { customRef, ref, type Ref } from 'vue'
 import { useDebounceFn, watchDeep } from '@vueuse/core'

@@ -77,26 +77,32 @@ export async function connected(ret: ReturnType<typeof setupYjs>, onMovedHandler
     await new Promise<void>(async (resolve) => {
       watch(ret.wsStatus, async (newStatus) => {
         if (newStatus === 'connected') {
-          setTimeout(async () => {
-            const rootKeys = [...ret.ydoc.getMap().keys()]
-            if (rootKeys.includes('meta-301-moved')) {
-              const moved = getY(ret.ydoc, 'meta-301-moved')
-              if (typeof moved !== 'string') {
-                alert('Warning: meta-301-moved is not a string!')
-              } else {
-                console.log('moved', moved)
-                if (moved && moved !== '') {
-                  const [newDocumentPath, ...rest] = moved.split(/\n/)
-                  const continueEditing = await onMovedHandler(newDocumentPath, rest.join('\n'))
-                  if (!continueEditing) {
-                    ret.ws!.disconnect()
-                    throw new Error('Document moved, editing aborted by user')
+          //ret.ws?.once('sync', () => {
+            console.log('WS SYNCED')
+            setTimeout(async () => {
+              const rootKeys = [...ret.ydoc.getMap().keys()]
+              console.log('ROOT KEYS', rootKeys)
+              if (rootKeys.includes('meta-301-moved')) {
+                const moved = getY(ret.ydoc, 'meta-301-moved')
+                if (typeof moved !== 'string') {
+                  alert('Warning: meta-301-moved is not a string!')
+                } else {
+                  console.log('moved', moved)
+                  if (moved && moved !== '') {
+                    const [newDocumentPath, ...rest] = moved.split(/\n/)
+                    const continueEditing = await onMovedHandler(newDocumentPath, rest.join('\n'))
+                    if (!continueEditing) {
+                      ret.ws!.disconnect()
+                      throw new Error('Document moved, editing aborted by user')
+                    }
                   }
+                  resolve()
                 }
+              } else {
                 resolve()
               }
-            }
-          }, 100)
+            }, 100)
+          //})
         }
       })
     })
@@ -105,8 +111,8 @@ export async function connected(ret: ReturnType<typeof setupYjs>, onMovedHandler
 }
 
 export async function syncedAndConnected(ret: ReturnType<typeof setupYjs>, onMovedHandler = DEFAULT_ON_MOVED_HANDLER) {
-  await synced(ret)
-  await connected(ret, onMovedHandler)
+  await synced(ret) // local sync with idb
+  await connected(ret, onMovedHandler) // remote ws sync
   return ret
 }
 
