@@ -15,7 +15,7 @@ export function getYText(doc: Y.Doc, path: string, create: boolean = false): Y.T
     const k = steps[0]
     return doc.getText(k)
   }
-  let p = doc.getMap(steps.shift())
+  let p = doc.getMap() // doc.getMap(steps.shift())
   while (steps.length > 1) {
     const k = steps.shift()!
     if (k === '@') {

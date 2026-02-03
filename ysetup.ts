@@ -101,7 +101,7 @@ export async function connected(ret: ReturnType<typeof setupYjs>, onMovedHandler
               } else {
                 resolve()
               }
-            }, 100)
+            }, 500)
           //})
         }
       })
