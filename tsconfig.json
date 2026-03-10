@@ -1,7 +1,6 @@
 {
   "extends": "@tsconfig/node24/tsconfig.json",
   "include": [
-    "**/*.js",
     "cli/*.ts"
   ],
   "exclude": [

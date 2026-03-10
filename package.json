@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "extract": "tsx cli/extract-box.ts",
-    "build": "tsc"
+    "build": "tsc --outDir dist"
   },
   "bin": {
     "yjs-datatools-extract": "dist/cli/extract-box.js"
