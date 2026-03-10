@@ -37,8 +37,8 @@ export function getYText(doc: Y.Doc, path: string, create: boolean = false): Y.T
 export function getYBoxFor(doc: Y.Doc, path: string): Y.Map<any> | undefined {
   const steps = path.split('/').filter((s) => s)
   if (steps.length < 2) throw new Error('Path must have at least two segments for box')
-  let p = doc.getMap(steps.shift())
-  while (steps.length > 1) {
+  let p = doc.getMap()//steps.shift())
+  while (steps.length > 0) {
     const k = steps.shift()!
     if (k === '@') {
       return p

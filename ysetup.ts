@@ -7,6 +7,23 @@ import { ref, watch } from 'vue'
 import { getY } from './ytools'
 export type ParsedConfig = ReturnType<typeof parseHash>
 
+const gt = globalThis as Partial<{
+  confirm: (message: string) => boolean,
+  alert: (message: string) => void,
+  prompt: (message: string) => string | null
+}>
+
+const confirm = gt.confirm || ((message: string) => {
+  console.warn('Confirm not available, auto-confirming:', message)
+  return true
+})
+const alert = gt.alert || ((message: string) => {
+  console.warn('Alert not available, message:', message)
+})
+const prompt = gt.prompt || ((message: string) => {
+  console.warn('Prompt not available, returning null for message:', message)
+  return null
+})
 
 export const DEFAULT_LOCAL_STORAGE_KEY_FOR_WARNING = 'yjsapp:server' // used to detect if user forgot to change it
 
@@ -117,7 +134,7 @@ export async function syncedAndConnected(ret: ReturnType<typeof setupYjs>, onMov
 }
 
 export function setupYjs(parsed: ParsedConfig, options: SetupYjsOptions = {}) {
-  console.log("PARSED", parsed)
+  console.log("PARSED", Object.assign({}, parsed, { token: parsed.token ? '*** redacted ***' : undefined }))
   const { server, docname, token } = parsed
   const { websocket, indexeddb, idbKey: _idbKey } = Object.assign({}, DEFAULT_SETUP_YJS_OPTIONS, options)
   let idbKey = _idbKey
