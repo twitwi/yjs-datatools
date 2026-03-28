@@ -1,6 +1,6 @@
 {
   "name": "yjs-datatools",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Collections of tools to be source-included, i.e., must install together with dependencies (all here is devDependencies).",
   "main": "index.ts",
   "scripts": {
